@@ -1,19 +1,20 @@
-const express = require("express")
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const bodyParser = require('body-parser')
-const cors = require("cors")
-require('dotenv').config()
+const express = require("express");
+const { MongoClient, ServerApiVersion } = require("mongodb");
+const bodyParser = require("body-parser");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const cors = require("cors");
+require("dotenv").config();
 
-const app = express()
-const port = process.env.PORT || 5000
+const app = express();
+const port = process.env.PORT || 5000;
 
 app.use(bodyParser.json());
-app.use(express.json())
+app.use(express.json());
 
-app.use(cors())
+app.use(cors());
 
-
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zwicj3r.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zwicj3r.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -21,31 +22,56 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
 
 async function run() {
   try {
-    const allUserData = client.db("xcash").collection("allUser");
+    const allUserData = client.db("athleteDress").collection("allUser");
 
-    app.post("/register", async (req,res) => {
-        const info = req.body ;
-        const result = await allUserData.insertOne(info)
-    })
+    app.post("/register", async (req, res) => {
+      const info = req.body;
+      console.log(info, "paise");
+      const hashedPassword = await bcrypt.hash(info.password, 10);
+      const maininfo = { ...info, hashedPassword: hashedPassword };
+      const result = await allUserData.insertOne(maininfo);
+      res.send(result);
+    });
+    app.post("/login", async (req, res) => {
+      const { emailornumber, password } = req.body;
+      const query = {
+        $or: [{ email: emailornumber }, { number: emailornumber }],
+      };
+      const user = await allUserData.findOne(query);
+      //   console.log(emailornumber, password, user);
+        console.log(user, "paichi");
+      if (!user) {
+        return res.status(400).json({ message: "Invalid credentials" });
+      }
+      const isPasswordValid = await bcrypt.compare(password, user.hashedPassword);
+      if (!isPasswordValid) {
+        return res.status(400).json({ message: "Invalid credentials" });
+      }
+      const token = jwt.sign({ emailornumber }, process.env.SECRET_KEY, {
+        expiresIn: "365day",
+      });
+      res.json({ token, usertype: user?.usertype, email: user?.email });
+    });
     // Connect the client to the server	(optional starting in v4.7)
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
   } finally {
     // Ensures that the client will close when you finish/error
-   
   }
 }
 run().catch(console.dir);
 
-app.get("/", (req,res) => {
-    res.send("hello ariful welcome back")
-})
+app.get("/", (req, res) => {
+  res.send("hello ariful welcome back");
+});
 app.listen(port, () => {
-    console.log(`athletedress server is runnig port ${port}`);
-  });
+  console.log(`athletedress server is runnig port ${port}`);
+});
