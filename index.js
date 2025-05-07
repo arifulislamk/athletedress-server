@@ -14,6 +14,21 @@ app.use(express.json());
 
 app.use(cors());
 
+const authenticateJWT = (req, res, next) => {
+  const token = req.header("Authorization").split(" ")[1];
+  // console.log(token, "token pai");
+  if (!token) {
+    return res.status(401).json({ message: "Access denied" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    res.status(400).json({ message: "Invalid token" });
+  }
+};
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zwicj3r.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -30,12 +45,16 @@ async function run() {
     const allUserData = client.db("athleteDress").collection("allUser");
 
     app.post("/register", async (req, res) => {
-      const info = req.body;
-      console.log(info, "paise");
-      const hashedPassword = await bcrypt.hash(info.password, 10);
+      const info = req.body ;
+      const {email,password} = req.body;
+      console.log(info, email,password, "paise");
+      const hashedPassword = await bcrypt.hash(password, 10);
       const maininfo = { ...info, hashedPassword: hashedPassword };
       const result = await allUserData.insertOne(maininfo);
-      res.send(result);
+      const token = jwt.sign({ email }, process.env.SECRET_KEY, {
+        expiresIn: "365day",
+      });
+      res.send({ token, usertype: info?.usertype, email: info?.email });
     });
     app.post("/login", async (req, res) => {
       const { emailornumber, password } = req.body;
