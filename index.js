@@ -43,6 +43,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const allUserData = client.db("athleteDress").collection("allUser");
+    const allJerseys = client.db("athleteDress").collection("allJerseys");
 
     app.post("/register", async (req, res) => {
       const info = req.body ;
@@ -76,6 +77,14 @@ async function run() {
       });
       res.json({ token, usertype: user?.usertype, email: user?.email });
     });
+
+    app.post("/allJerseys", async(req,res) => {
+      const jerseydata = req.body ;
+      const result = await allJerseys.insertOne(jerseydata) ;
+      res.send(result)
+    })
+
+    
     // Connect the client to the server	(optional starting in v4.7)
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
