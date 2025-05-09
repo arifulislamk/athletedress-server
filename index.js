@@ -91,6 +91,12 @@ async function run() {
       const result = await allJerseys.find().toArray();
       res.send(result);
     });
+    app.get("/jerseyDetails/:id", async(req, res)=> {
+      const {id} = req.params ;
+      const query = { _id : new ObjectId(id)} ;
+      const result = await allJerseys.findOne(query) ;
+      res.send(result) ;
+    })
     app.delete("/jerseydelete/:id", async (req, res) => {
       const id = req.params ;
       const query = {_id : new ObjectId(id)};
