@@ -44,11 +44,11 @@ async function run() {
   try {
     const allUserData = client.db("athleteDress").collection("allUser");
     const allJerseys = client.db("athleteDress").collection("allJerseys");
-
+    // all user collection api
     app.post("/register", async (req, res) => {
-      const info = req.body ;
-      const {email,password} = req.body;
-      console.log(info, email,password, "paise");
+      const info = req.body;
+      const { email, password } = req.body;
+      console.log(info, email, password, "paise");
       const hashedPassword = await bcrypt.hash(password, 10);
       const maininfo = { ...info, hashedPassword: hashedPassword };
       const result = await allUserData.insertOne(maininfo);
@@ -64,11 +64,14 @@ async function run() {
       };
       const user = await allUserData.findOne(query);
       //   console.log(emailornumber, password, user);
-        console.log(user, "paichi");
+      console.log(user, "paichi");
       if (!user) {
         return res.status(400).json({ message: "Invalid credentials" });
       }
-      const isPasswordValid = await bcrypt.compare(password, user.hashedPassword);
+      const isPasswordValid = await bcrypt.compare(
+        password,
+        user.hashedPassword
+      );
       if (!isPasswordValid) {
         return res.status(400).json({ message: "Invalid credentials" });
       }
@@ -77,14 +80,18 @@ async function run() {
       });
       res.json({ token, usertype: user?.usertype, email: user?.email });
     });
+    // all jerseys collection api
+    app.post("/allJerseys", async (req, res) => {
+      const jerseydata = req.body;
+      const result = await allJerseys.insertOne(jerseydata);
+      res.send(result);
+    });
 
-    app.post("/allJerseys", async(req,res) => {
-      const jerseydata = req.body ;
-      const result = await allJerseys.insertOne(jerseydata) ;
-      res.send(result)
-    })
+    app.get("/allJerseys", async (req, res) => {
+      const result = await allJerseys.find().toArray();
+      res.send(result);
+    });
 
-    
     // Connect the client to the server	(optional starting in v4.7)
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
