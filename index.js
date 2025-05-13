@@ -44,6 +44,7 @@ async function run() {
   try {
     const allUserData = client.db("athleteDress").collection("allUser");
     const allJerseys = client.db("athleteDress").collection("allJerseys");
+    const carts = client.db("athleteDress").collection("carts");
     // all user collection api
     app.post("/register", async (req, res) => {
       const info = req.body;
@@ -104,6 +105,12 @@ async function run() {
       res.send(result)
     })
 
+    // cart collection api
+    app.post("/cart", async(req,res )=> {
+      const data = req.body ;
+      const result = await carts.insertOne(data) ;
+      res.send(result)
+    })
     // Connect the client to the server	(optional starting in v4.7)
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
