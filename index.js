@@ -12,7 +12,13 @@ const port = process.env.PORT || 5000;
 app.use(bodyParser.json());
 app.use(express.json());
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    "https://athletedress.netlify.app",
+    "http://localhost:5173",
+    "https://athletedress-server-30nfrsobu.vercel.app",
+  ]
+}));
 
 const authenticateJWT = (req, res, next) => {
   const token = req.header("Authorization").split(" ")[1];
@@ -109,6 +115,12 @@ async function run() {
     app.post("/cart", async(req,res )=> {
       const data = req.body ;
       const result = await carts.insertOne(data) ;
+      res.send(result)
+    })
+    app.get("/carts/:email", async(req, res) => {
+      const email = req.params.email ;
+      // console.log(email, 'tahake pailam')
+      const result = await carts.find({purchaseEmail:email}).toArray()
       res.send(result)
     })
     // Connect the client to the server	(optional starting in v4.7)
