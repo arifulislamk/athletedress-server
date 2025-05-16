@@ -12,13 +12,15 @@ const port = process.env.PORT || 5000;
 app.use(bodyParser.json());
 app.use(express.json());
 
-app.use(cors({
-  origin: [
-    "https://athletedress.netlify.app",
-    "http://localhost:5173",
-    "https://athletedress-server-30nfrsobu.vercel.app",
-  ]
-}));
+app.use(
+  cors({
+    origin: [
+      "https://athletedress.netlify.app",
+      "http://localhost:5173",
+      "https://athletedress-server-30nfrsobu.vercel.app",
+    ],
+  })
+);
 
 const authenticateJWT = (req, res, next) => {
   const token = req.header("Authorization").split(" ")[1];
@@ -98,37 +100,50 @@ async function run() {
       const result = await allJerseys.find().toArray();
       res.send(result);
     });
-    app.get("/jerseyDetails/:id", async(req, res)=> {
-      const {id} = req.params ;
-      const query = { _id : new ObjectId(id)} ;
-      const result = await allJerseys.findOne(query) ;
-      res.send(result) ;
-    })
+    app.get("/jerseyDetails/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const result = await allJerseys.findOne(query);
+      res.send(result);
+    });
     app.delete("/jerseydelete/:id", async (req, res) => {
-      const id = req.params ;
-      const query = {_id : new ObjectId(id)};
+      const id = req.params;
+      const query = { _id: new ObjectId(id) };
       const result = await allJerseys.deleteOne(query);
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     // cart collection api
-    app.post("/cart", async(req,res )=> {
-      const data = req.body ;
-      const result = await carts.insertOne(data) ;
-      res.send(result)
-    })
-    app.get("/carts/:email", async(req, res) => {
-      const email = req.params.email ;
+    app.post("/cart", async (req, res) => {
+      const data = req.body;
+      const { productId, purchaseEmail } = data;
+      // console.log(data?.count);
+      const exsitingcart = await carts.findOne({ productId,purchaseEmail  });
+      // console.log(exsitingcart?.count) ;
+      if (exsitingcart) {
+         const newCount = (exsitingcart?.count || 0) + (data?.count || 1);
+        const result = await carts.updateOne(
+          { _id: exsitingcart._id },
+          { $set: { count: newCount } }
+        );
+        return res.send({ updated: true, result });
+      } else {
+        const result = await carts.insertOne(data);
+        res.send(result);
+      }
+    });
+    app.get("/carts/:email", async (req, res) => {
+      const email = req.params.email;
       // console.log(email, 'tahake pailam')
-      const result = await carts.find({purchaseEmail:email}).toArray()
-      res.send(result)
-    })
-    app.delete("/allcartsdelete/:id", async(req,res) => {
-      const id = req.params.id ;
-      const query = { _id : new ObjectId(id)} ;
-      const result = await carts.deleteOne(query) ;
-      res.send(result)
-    })
+      const result = await carts.find({ purchaseEmail: email }).toArray();
+      res.send(result);
+    });
+    app.delete("/allcartsdelete/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await carts.deleteOne(query);
+      res.send(result);
+    });
     // Connect the client to the server	(optional starting in v4.7)
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
