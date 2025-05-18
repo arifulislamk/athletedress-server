@@ -53,7 +53,21 @@ async function run() {
     const allUserData = client.db("athleteDress").collection("allUser");
     const allJerseys = client.db("athleteDress").collection("allJerseys");
     const carts = client.db("athleteDress").collection("carts");
+
+    // token api 
+    app.post("/jwt", async(req, res) => {
+      const user = req.body ;
+      // console.log(user, "user paise") ;
+      const token = jwt.sign(user, process.env.SECRET_KEY, {expiresIn : "365days"})
+      res.send({token})
+    })
     // all user collection api
+    app.get("/user/admin/:email", async(req,res) => {
+      const email = req.params.email ;
+      const query = {email : email} ;
+      const result = await allUserData.findOne(query) ;
+      res.send(result)
+    })
     app.post("/register", async (req, res) => {
       const info = req.body;
       const { email, password } = req.body;
